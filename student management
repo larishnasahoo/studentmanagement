@@ -1,0 +1,135 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+class Student {
+    private int id;
+    private String name;
+    private int totalMarks;
+
+    public Student(int id, String name, int totalMarks) {
+        this.id = id;
+        this.name = name;
+        this.totalMarks = totalMarks;
+    }
+
+    // Getters and setters
+
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getTotalMarks() {
+        return totalMarks;
+    }
+}
+
+class StudentDataLoader {
+    private List<Student> students;
+
+    public StudentDataLoader(String filePath) {
+        students = new ArrayList<>();
+        loadDataFromFile(filePath);
+    }
+
+    private void loadDataFromFile(String filePath) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                int id = Integer.parseInt(data[0]);
+                String name = data[1];
+                int totalMarks = Integer.parseInt(data[2]);
+                students.add(new Student(id, name, totalMarks));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<Student> getStudents() {
+        return students;
+    }
+}
+
+class StudentFilter {
+    public List<Student> filterStudents(List<Student> students, String columnName, String filterValue) {
+        List<Student> filteredStudents = new ArrayList<>();
+        for (Student student : students) {
+            if (columnName.equalsIgnoreCase("id") && String.valueOf(student.getId()).equals(filterValue)) {
+                filteredStudents.add(student);
+            } else if (columnName.equalsIgnoreCase("name") && student.getName().equalsIgnoreCase(filterValue)) {
+                filteredStudents.add(student);
+            } else if (columnName.equalsIgnoreCase("totalMarks") && String.valueOf(student.getTotalMarks()).equals(filterValue)) {
+                filteredStudents.add(student);
+            }
+        }
+        return filteredStudents;
+    }
+}
+
+class PaginationHelper {
+    public List<Student> getPage(List<Student> students, int pageNumber, int pageSize) {
+        int startIndex = (pageNumber - 1) * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, students.size());
+        if (startIndex >= endIndex) {
+            return new ArrayList<>();
+        }
+        return students.subList(startIndex, endIndex);
+    }
+}
+
+public class StudentAPI {
+    private static final String FILE_PATH = "student_data.csv";
+
+    private List<Student> students;
+    private StudentFilter studentFilter;
+    private PaginationHelper paginationHelper;
+
+    public StudentAPI() {
+        StudentDataLoader dataLoader = new StudentDataLoader(FILE_PATH);
+        students = dataLoader.getStudents();
+        studentFilter = new StudentFilter();
+        paginationHelper = new PaginationHelper();
+    }
+
+    public List<Student> loadStudentDetails(int pageNumber, int pageSize) {
+        return paginationHelper.getPage(students, pageNumber, pageSize);
+    }
+
+    public List<Student> filterStudents(String columnName, String filterValue) {
+        return studentFilter.filterStudents(students, columnName, filterValue);
+    }
+
+    public static void main(String[] args) {
+        StudentAPI studentAPI = new StudentAPI();
+
+        // Example usage: Load student details
+        int pageNumber = 1;
+        int pageSize = 10;
+        List<Student> paginatedStudents = studentAPI.loadStudentDetails(pageNumber, pageSize);
+        for (Student student : paginatedStudents) {
+            System.out.println("ID: " + student.getId());
+            System.out.println("Name: " + student.getName());
+            System.out.println("Total Marks: " + student.getTotalMarks());
+            System.out.println("-------------------------");
+        }
+
+        // Example usage: Filter students
+        String columnName = "name";
+        String filterValue = "John Doe";
+        List<Student> filteredStudents = studentAPI.filterStudents(columnName, filterValue);
+        for (Student student : filteredStudents) {
+            System.out.println("ID: " + student.getId());
+            System.out.println("Name: " + student.getName());
+            System.out.println("Total Marks: " + student.getTotalMarks());
+            System.out.println("-------------------------");
+        }
+    }
+}
